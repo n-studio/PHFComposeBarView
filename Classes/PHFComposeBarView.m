@@ -654,13 +654,43 @@ static CGFloat kTextViewToSuperviewHeightDelta;
     [[self textView] setDelegate:(id<UITextViewDelegate>)delegateChain];
 }
 
+// Code from apple developer forum - @Steve Krulewitz, @Mark Marszal, @Eric Silverberg
 - (CGFloat)textHeight {
-    // Sometimes when the text is empty, the contentSize is larger than actually
-    // needed.
-    if ([[[self textView] text] isEqualToString:@""])
-        return PHFComposeBarViewInitialHeight;
-    else
-        return [[self textView] contentSize].height + kTextViewToSuperviewHeightDelta;
+    // hack for iOS7
+    if ([self respondsToSelector:@selector(snapshotViewAfterScreenUpdates:)]) {
+        CGRect frame = self.textView.bounds;
+        CGSize fudgeFactor;
+        // The padding added around the text on iOS6 and iOS7 is different.
+
+        fudgeFactor = CGSizeMake(10.0, 16.0);
+        frame.size.height -= fudgeFactor.height;
+        frame.size.width -= fudgeFactor.width;
+
+        NSString *textToMeasure = self.textView.text;
+        if ([textToMeasure hasSuffix:@"\n"]) {
+            textToMeasure = [NSString stringWithFormat:@"%@-", self.textView.text];
+        }
+
+        NSDictionary *attributes = @{NSFontAttributeName: self.textView.font};
+        // NSString class method: boundingRectWithSize:options:attributes:context is
+        // available only on ios7.0 sdk.
+        CGRect size = [textToMeasure boundingRectWithSize:CGSizeMake(CGRectGetWidth(frame), MAXFLOAT)
+                                                                                      options:NSStringDrawingUsesLineFragmentOrigin
+                                                                                   attributes:attributes
+                                                                                      context:nil];
+
+        return CGRectGetHeight(size) + fudgeFactor.height + kTextViewToSuperviewHeightDelta;
+    }
+    else {
+        // Sometimes when the text is empty, the contentSize is larger than actually
+        // needed.
+        if ([[[self textView] text] isEqualToString:@""])
+            return PHFComposeBarViewInitialHeight;
+        else {
+            NSLog(@"height: %f", [[self textView] contentSize].height);
+            return [[self textView] contentSize].height + kTextViewToSuperviewHeightDelta;
+        }
+    }
 }
 
 - (void)updateButtonEnabled {
