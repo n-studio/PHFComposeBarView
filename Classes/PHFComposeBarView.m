@@ -687,7 +687,6 @@ static CGFloat kTextViewToSuperviewHeightDelta;
         if ([[[self textView] text] isEqualToString:@""])
             return PHFComposeBarViewInitialHeight;
         else {
-            NSLog(@"height: %f", [[self textView] contentSize].height);
             return [[self textView] contentSize].height + kTextViewToSuperviewHeightDelta;
         }
     }
